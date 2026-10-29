@@ -5,10 +5,12 @@ package gen_test
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -105,4 +107,35 @@ func TestNumberDivLimit(t *testing.T) {
 	n.Frac = gen.DivLimit + 1
 	n.Div = 1000
 	n.FillBig() // no panic
+}
+
+func TestNumberFloatRounding(t *testing.T) {
+	for _, src := range []string{
+		"0.3",
+		"0.6",
+		"3e-1",
+		"1.14",
+		"53e-1",
+		"1.5e-1",
+		"-0.3",
+		"8.54E-4",
+		"2.0250405e+07",
+		"9007199254740993.5",
+		"1.7976931348623157e308",
+		"5e-324",
+		"1e23",
+	} {
+		want, err := strconv.ParseFloat(src, 64)
+		tt.Nil(t, err, "%s", src)
+
+		// oj.Parse uses AsNum and gen.Parser uses AsNode.
+		v, err := oj.Parse([]byte(src))
+		tt.Nil(t, err, "%s", src)
+		tt.Equal(t, want, v, "oj.Parse %s", src)
+
+		var p gen.Parser
+		n, err := p.Parse([]byte(src))
+		tt.Nil(t, err, "%s", src)
+		tt.Equal(t, want, n, "gen.Parser %s", src)
+	}
 }
